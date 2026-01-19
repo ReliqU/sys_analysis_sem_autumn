@@ -3,54 +3,54 @@ import csv
 import math
 from collections import defaultdict
 
-def read_csv_data(input_string: str) -> List[Tuple[str, str]]:
-    csv_reader = csv.reader(input_string.splitlines())
-    return [(items[0].strip(), items[1].strip()) for items in csv_reader]
+def parse_csv(s: str) -> List[Tuple[str, str]]:
+    reader = csv.reader(s.splitlines())
+    return [(row[0].strip(), row[1].strip()) for row in reader]
 
-def create_tree_structure(connections: List[Tuple[str, str]]) -> dict:
-    tree = defaultdict(list)
-    for parent_node, child_node in connections:
-        tree[parent_node].append(child_node)
-    return tree
+def build_graph(edges: List[Tuple[str, str]]) -> dict:
+    graph = defaultdict(list)
+    for parent, child in edges:
+        graph[parent].append(child)
+    return graph
 
-def compute_tree_entropy(tree_structure: dict, start_node: str) -> float:
-    if start_node not in tree_structure:
+def calculate_entropy(graph: dict, root: str) -> float:
+    if root not in graph:
         return 0.0
 
-    def count_nodes(current_node: str) -> int:
-        if current_node not in tree_structure or not tree_structure[current_node]:
+    def dfs(node: str) -> int:
+        if node not in graph or not graph[node]:
             return 1
-        total = 1
-        for descendant in tree_structure[current_node]:
-            total += count_nodes(descendant)
-        return total
+        size = 1
+        for child in graph[node]:
+            size += dfs(child)
+        return size
 
-    sizes_list = []
-    for node in tree_structure:
-        sizes_list.append(count_nodes(node))
+    subtree_sizes = []
+    for node in graph:
+        subtree_sizes.append(dfs(node))
 
-    all_nodes_count = sum(sizes_list)
-    probs = [size_val / all_nodes_count for size_val in sizes_list]
+    total_nodes = sum(subtree_sizes)
+    probabilities = [size / total_nodes for size in subtree_sizes]
 
-    entropy_value = -sum(prob * math.log2(prob) for prob in probs if prob > 0)
-    return entropy_value
+    entropy = -sum(p * math.log2(p) for p in probabilities if p > 0)
+    return entropy
 
-def compute_normalized_complexity(tree_structure: dict) -> float:
-    total_edges = sum(len(children_list) for children_list in tree_structure.values())
-    total_nodes = len(tree_structure)
-    if total_nodes <= 1:
+def normalized_structural_complexity(graph: dict) -> float:
+    edge_count = sum(len(children) for children in graph.values())
+    node_count = len(graph)
+    if node_count <= 1:
         return 0.0
 
-    normalized_complexity = total_edges / (total_nodes * (total_nodes - 1))
-    return normalized_complexity
+    complexity = edge_count / (node_count * (node_count - 1))
+    return complexity
 
-def analyze_tree(input_string: str, root_node: str) -> Tuple[float, float]:
-    connections_list = read_csv_data(input_string)
+def task(s: str, root: str) -> Tuple[float, float]:
+    edges = parse_csv(s)
 
-    tree_dict = create_tree_structure(connections_list)
+    graph = build_graph(edges)
 
-    entropy_result = compute_tree_entropy(tree_dict, root_node)
+    entropy = calculate_entropy(graph, root)
 
-    complexity_result = compute_normalized_complexity(tree_dict)
+    complexity = normalized_structural_complexity(graph)
 
-    return (round(entropy_result, 1), round(complexity_result, 1))
+    return (round(entropy, 1), round(complexity, 1))
